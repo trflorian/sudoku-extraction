@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-
+import argparse
 
 def order_points(pts: np.ndarray) -> np.ndarray:
     """
@@ -55,7 +55,7 @@ def find_sudoku_grid(
         The contour of the found grid as a numpy array, or None if not found.
     """
     # --- 1. Preprocessing ---
-    # Resize for faster processing, preserving the aspect ratio
+    # Resize for consistent kernel sizes
     ratio = image.shape[0] / image.shape[1]
     img_calc = cv2.resize(image, (calc_ref_width, int(calc_ref_width * ratio)))
 
@@ -64,7 +64,7 @@ def find_sudoku_grid(
     # mask = cv2.inRange(hsv, lowerb=(0, 0, 0), upperb=(180, max_saturation, 255))
     mask = (hsv[:, :, 1] < max_saturation).astype(np.uint8) * 255
 
-    # Grayscale, apply mask, and blur to prepare for edge detection
+    # Grayscale and apply mask to prepare for edge detection
     gray = cv2.cvtColor(img_calc, cv2.COLOR_BGR2GRAY)
     gray = cv2.bitwise_and(gray, gray, mask=mask)
 
@@ -130,7 +130,7 @@ def animate_warp(
     src_rect: np.ndarray,
     dst_rect: np.ndarray,
     final_size: int,
-    duration_sec: float = 2.0,
+    duration_sec: float = 1.0,
     fps: int = 30,
 ):
     """
@@ -162,10 +162,20 @@ def animate_warp(
         cv2.imshow(window_name, warped)
         cv2.waitKey(1000 // fps)
 
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Sudoku Grid Detection and Warping")
+    parser.add_argument(
+        "--image",
+        type=str,
+        default="images/sudoku_001.jpg",
+        help="Path to the input image",
+    )
+    return parser.parse_args()
 
 def main() -> None:
     """Main function to run the Sudoku grid detection and warping."""
-    IMG_PATH = "images/sudoku_004.jpg"
+    args = parse_args()
+    IMG_PATH = args.image
     WINDOW_NAME = "Sudoku"
 
     cv2.namedWindow(WINDOW_NAME)
