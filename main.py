@@ -45,6 +45,11 @@ def find_sudoku_grid(
 
     Args:
         image: The input image.
+        calc_ref_width: The width to resize the image for processing.
+        max_saturation: Maximum saturation value for the mask.
+        canny_threshold_1: First threshold for the Canny edge detector.
+        canny_threshold_2: Second threshold for the Canny edge detector.
+        morph_kernel_size: Size of the morphological operation kernel.
 
     Returns:
         The contour of the found grid as a numpy array, or None if not found.
@@ -74,7 +79,9 @@ def find_sudoku_grid(
     canny = cv2.morphologyEx(canny, op=cv2.MORPH_DILATE, kernel=kernel, iterations=1)
 
     # Find external contours
-    contours, _ = cv2.findContours(canny, mode=cv2.RETR_EXTERNAL, method=cv2.CHAIN_APPROX_SIMPLE)
+    contours, _ = cv2.findContours(
+        canny, mode=cv2.RETR_EXTERNAL, method=cv2.CHAIN_APPROX_SIMPLE
+    )
 
     # --- 3. Filter Contours ---
     contour_candidates: list[np.ndarray] = []
@@ -156,8 +163,7 @@ def animate_warp(
         cv2.waitKey(1000 // fps)
 
 
-
-def main():
+def main() -> None:
     """Main function to run the Sudoku grid detection and warping."""
     IMG_PATH = "images/sudoku_004.jpg"
     WINDOW_NAME = "Sudoku"
