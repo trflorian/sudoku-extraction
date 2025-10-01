@@ -1,35 +1,12 @@
+import argparse
+import logging
+
 import cv2
 import numpy as np
-import argparse
 
-def order_points(pts: np.ndarray) -> np.ndarray:
-    """
-    Orders the four corner points of a contour in a consistent
-    top-left, top-right, bottom-right, bottom-left sequence.
+from sudoku_extraction.point_order import CyclicSortWithCentroidAnchor
 
-    Args:
-        pts: A numpy array of shape (4, 2) representing the four corners.
-
-    Returns:
-        A numpy array of shape (4, 2) with the points ordered.
-    """
-    # Reshape from (4, 1, 2) to (4, 2) if needed
-    pts = pts.reshape(4, 2)
-    rect = np.zeros((4, 2), dtype=np.float32)
-
-    # The top-left point will have the smallest sum, whereas
-    # the bottom-right point will have the largest sum
-    s = pts.sum(axis=1)
-    rect[0] = pts[np.argmin(s)]
-    rect[2] = pts[np.argmax(s)]
-
-    # The top-right point will have the smallest difference,
-    # whereas the bottom-left will have the largest difference
-    diff = np.diff(pts, axis=1)
-    rect[1] = pts[np.argmin(diff)]
-    rect[3] = pts[np.argmax(diff)]
-
-    return rect
+logger = logging.getLogger(__name__)
 
 
 def find_sudoku_grid(
@@ -73,15 +50,11 @@ def find_sudoku_grid(
     canny = cv2.Canny(gray, threshold1=canny_threshold_1, threshold2=canny_threshold_2)
 
     # Dilate to close small gaps in the detected edges
-    kernel = cv2.getStructuringElement(
-        shape=cv2.MORPH_RECT, ksize=(morph_kernel_size, morph_kernel_size)
-    )
+    kernel = cv2.getStructuringElement(shape=cv2.MORPH_RECT, ksize=(morph_kernel_size, morph_kernel_size))
     canny = cv2.morphologyEx(canny, op=cv2.MORPH_DILATE, kernel=kernel, iterations=1)
 
     # Find external contours
-    contours, _ = cv2.findContours(
-        canny, mode=cv2.RETR_EXTERNAL, method=cv2.CHAIN_APPROX_SIMPLE
-    )
+    contours, _ = cv2.findContours(canny, mode=cv2.RETR_EXTERNAL, method=cv2.CHAIN_APPROX_SIMPLE)
 
     # --- 3. Filter Contours ---
     contour_candidates: list[np.ndarray] = []
@@ -100,9 +73,7 @@ def find_sudoku_grid(
     max_contour_area = 0.9 * image_area
 
     contour_candidates = [
-        cnt
-        for cnt in contour_candidates
-        if min_contour_area < cv2.contourArea(cnt) < max_contour_area
+        cnt for cnt in contour_candidates if min_contour_area < cv2.contourArea(cnt) < max_contour_area
     ]
 
     if not contour_candidates:
@@ -132,7 +103,7 @@ def animate_warp(
     final_size: int,
     duration_sec: float = 1.0,
     fps: int = 30,
-):
+) -> None:
     """
     Animates the perspective warp transformation.
 
@@ -145,6 +116,7 @@ def animate_warp(
         duration_sec: Duration of the animation in seconds.
         fps: Frames per second for the animation.
     """
+
     num_steps = int(duration_sec * fps)
     for step in range(1, num_steps + 1):
         alpha = step / num_steps
@@ -162,6 +134,7 @@ def animate_warp(
         cv2.imshow(window_name, warped)
         cv2.waitKey(1000 // fps)
 
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Sudoku Grid Detection and Warping")
     parser.add_argument(
@@ -172,9 +145,13 @@ def parse_args() -> argparse.Namespace:
     )
     return parser.parse_args()
 
+
 def main() -> None:
     """Main function to run the Sudoku grid detection and warping."""
     args = parse_args()
+
+    logging.basicConfig(level=logging.INFO)
+
     IMG_PATH = args.image
     WINDOW_NAME = "Sudoku"
 
@@ -182,21 +159,22 @@ def main() -> None:
 
     img = cv2.imread(IMG_PATH)
     if img is None:
-        print(f"Error: Could not load image from {IMG_PATH}")
+        logger.error(f"Error: Could not load image from {IMG_PATH}")
         return
 
     # --- 1. Find the Sudoku grid in the image ---
     grid_contour = find_sudoku_grid(img)
 
     if grid_contour is None:
-        print("No Sudoku grid found!")
+        logger.warning("No Sudoku grid found!")
         cv2.imshow(WINDOW_NAME, img)
         cv2.waitKey(0)
         cv2.destroyAllWindows()
         return
 
     # Order the corner points for a consistent transformation
-    rect_src = order_points(grid_contour)
+    point_orderer = CyclicSortWithCentroidAnchor()
+    rect_src = point_orderer(grid_contour)
 
     # --- 2. Draw the found contour for visualization ---
     img_annot = img.copy()
@@ -230,6 +208,10 @@ def main() -> None:
         [[0, 0], [side_len - 1, 0], [side_len - 1, side_len - 1], [0, side_len - 1]],
         dtype=np.float32,
     )
+
+    # Ensure points are float32 for cv2 functions
+    rect_src = rect_src.astype(np.float32)
+    rect_dst = rect_dst.astype(np.float32)
 
     # --- 4. Animate and perform the final warp ---
     animate_warp(WINDOW_NAME, img, rect_src, rect_dst, side_len)
