@@ -3,6 +3,8 @@
 This project focuses on extracting and processing Sudoku grids from images using classical computer vision techniques.
 It includes functionalities for detecting the grid, warping the image, and preparing it for further analysis or digit recognition.
 
+![Sudoku Extraction](https://github.com/user-attachments/assets/5f763479-8b19-4e54-bf05-fb9ab1c76a44)
+
 ## Quickstart
 
 This project supports `uv` for easy environment management and script execution.
