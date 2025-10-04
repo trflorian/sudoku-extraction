@@ -15,7 +15,10 @@ Some sample sudoku images are available in the `images/` directory.
 uv run scripts/extraction.py --image images/sudoku_001.jpg
 ```
 
-![Sudoku Grid](images/sudoku_001.jpg)
+<img width="640" alt="image" src="https://github.com/user-attachments/assets/1d401a42-a33a-47d4-9054-02344e530f07" />
+
+<img width="480" alt="image" src="https://github.com/user-attachments/assets/86cf2168-055d-4791-9af3-6bb7dd2c4441" />
+
 
 ### Corner Sorting
 
