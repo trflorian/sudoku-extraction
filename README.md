@@ -33,15 +33,7 @@ uv run scripts/visualize_corner_sorting.py --help
 usage: visualize_corner_sorting.py [-h] [--type {cyclic,assignment,centroid,simple}] [--fps FPS] [--rot_speed ROT_SPEED]
 ```
 
-## Processing Pipeline
-
-The main processing steps include:
-1. **Grayscale Conversion**: Convert the input image to grayscale.
-2. **Canny Edge Detection**: Apply Canny edge detection to highlight the edges in the image.
-```bash
-uv run scripts/visualize_corner_sorting.py --help
-usage: visualize_corner_sorting.py [-h] [--type {cyclic,assignment,centroid,simple}] [--fps FPS] [--rot_speed ROT_SPEED]
-```
+![rotating_rect_skew_working_angles](https://github.com/user-attachments/assets/f6f8ebfb-5423-4046-a985-66b47b0f737e)
 
 ## Processing Pipeline
 
