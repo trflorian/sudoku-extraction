@@ -142,21 +142,52 @@ def main() -> None:
         processed_cells.append(digit_padded)
 
     # re-create the full image with these processed cells for visualization
+    # target_size = 28
+    target_size = side_len // 9
     border = 2
-    reconstructed = np.zeros((9 * 28 + border * 2, 9 * 28 + border * 2), dtype=np.uint8)
+    reconstructed = np.zeros((9 * target_size + border * 2, 9 * target_size + border * 2), dtype=np.uint8)
     for i, cell in enumerate(processed_cells):
         row = i // 9
         col = i % 9
-        reconstructed[row * 28 + border : (row + 1) * 28 + border, col * 28 + border : (col + 1) * 28 + border] = cell
+        reconstructed[
+            row * target_size + border : (row + 1) * target_size + border,
+            col * target_size + border : (col + 1) * target_size + border,
+        ] = cv2.resize(cell, (target_size, target_size), interpolation=cv2.INTER_AREA)
     # draw grid lines
     for i in range(10):
         line_thickness = 2 if i % 3 == 0 else 1
-        cv2.line(reconstructed, (border, i * 28 + border), (9 * 28 + border, i * 28 + border), 255, line_thickness)
-        cv2.line(reconstructed, (i * 28 + border, border), (i * 28 + border, 9 * 28 + border), 255, line_thickness)
+        cv2.line(
+            reconstructed,
+            (border, i * target_size + border),
+            (9 * target_size + border, i * target_size + border),
+            255,
+            line_thickness,
+        )
+        cv2.line(
+            reconstructed,
+            (i * target_size + border, border),
+            (i * target_size + border, 9 * target_size + border),
+            255,
+            line_thickness,
+        )
 
-    cv2.imshow("Reconstructed", reconstructed)
-    cv2.imshow(WINDOW_NAME, img)
-    cv2.waitKey(0)
+    # warp this reconstructed image back to original perspective for visualization
+    inv_warp_mat = cv2.getPerspectiveTransform(rect_dst, rect_src)
+    reconstructed_warped = cv2.warpPerspective(reconstructed, inv_warp_mat, (img.shape[1], img.shape[0]))
+
+    # draw pink full wherever the reconstructed image is non-zero
+    mask = reconstructed_warped > 0
+    img_annot = img.copy()
+    img_annot[mask] = [255, 0, 255]
+
+    # toggle between original and annotated image
+    show_annot = True
+    while True:
+        cv2.imshow(WINDOW_NAME, img_annot if show_annot else img)
+        key = cv2.waitKey(0)
+        if key == ord("q") or key == 27:  # 'q' or ESC to quit
+            break
+        show_annot = not show_annot
     cv2.destroyAllWindows()
 
 
