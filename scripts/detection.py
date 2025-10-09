@@ -83,7 +83,7 @@ def main() -> None:
         adaptiveMethod=cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
         thresholdType=cv2.THRESH_BINARY_INV,
         blockSize=31,
-        C=20,
+        C=15,
     )
 
     # remove intermediate lines between the cells for better digit visibility
@@ -170,6 +170,11 @@ def main() -> None:
             255,
             line_thickness,
         )
+
+    # show the reconstructed image
+    cv2.imshow("Reconstructed", reconstructed)
+    cv2.imwrite("reconstructed.png", reconstructed)
+    cv2.waitKey(0)
 
     # warp this reconstructed image back to original perspective for visualization
     inv_warp_mat = cv2.getPerspectiveTransform(rect_dst, rect_src)
